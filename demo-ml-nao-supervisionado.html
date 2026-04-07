@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Aprendizagem Não Supervisionada</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f1117;color:#e8eaf0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+.c{max-width:1060px;margin:0 auto;padding:1.5rem 1rem 2.5rem}
+header{text-align:center;margin-bottom:2rem}
+.tg{display:inline-block;background:rgba(77,205,196,.12);color:#4dcdc4;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.3rem .8rem;border-radius:20px;margin-bottom:.8rem;border:1px solid rgba(77,205,196,.2)}
+h1{font-family:Georgia,serif;font-weight:700;font-size:clamp(1.4rem,3.5vw,2.2rem);line-height:1.25;margin-bottom:.5rem}
+header p{color:#8b90a5;font-size:.9rem;max-width:500px;margin:0 auto;line-height:1.55}
+.ly{display:grid;grid-template-columns:1fr 300px;gap:1.2rem;align-items:start}
+@media(max-width:800px){.ly{grid-template-columns:1fr}}
+.cc{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;overflow:hidden}
+.ch{padding:.8rem 1rem;border-bottom:1px solid #2e3346;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem}
+.ch h2{font-family:Georgia,serif;font-size:.95rem;font-weight:600}
+.st{font-size:.78rem;color:#8b90a5}
+.st b{color:#e8eaf0;font-weight:700}
+.cw{position:relative;background:#13151d}
+.cw canvas{display:block;width:100%;cursor:crosshair}
+.al{position:absolute;font-size:.65rem;color:#6b7089;font-weight:500;text-transform:uppercase;letter-spacing:.05em;pointer-events:none}
+.al.x{bottom:4px;left:50%;transform:translateX(-50%)}
+.al.y{top:50%;left:2px;transform:rotate(-90deg) translateX(-50%);transform-origin:left center}
+.sb{display:flex;flex-direction:column;gap:.8rem}
+.cd{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem}
+.cd h3{font-family:Georgia,serif;font-size:.85rem;font-weight:600;margin-bottom:.6rem}
+.pi{display:flex;align-items:center;gap:.4rem;padding:.5rem .7rem;border-radius:6px;font-size:.75rem;font-weight:600;margin-bottom:.6rem}
+.pi.w{background:rgba(77,205,196,.1);color:#4dcdc4;border:1px solid rgba(77,205,196,.2)}
+.pi.d{background:rgba(105,219,124,.1);color:#69db7c;border:1px solid rgba(105,219,124,.2)}
+.pd{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pu 1.5s ease-in-out infinite}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.cf{margin-bottom:.6rem}
+.cf label{display:block;font-size:.78rem;color:#8b90a5;margin-bottom:.35rem}
+.kr{display:flex;gap:.4rem;align-items:center}
+.kb{width:44px;height:38px;border-radius:8px;border:2px solid #2e3346;background:transparent;color:#e8eaf0;font-family:Georgia,serif;font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.kb:hover{transform:translateY(-1px)}
+.kb.on{border-color:#4dcdc4;background:rgba(77,205,196,.12);color:#4dcdc4}
+.vs{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;padding:.5rem .7rem;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid #2e3346}
+.vs label{font-size:.72rem;color:#8b90a5;white-space:nowrap}
+.vs input[type=range]{flex:1;accent-color:#4dcdc4;height:4px}
+.vs .vv{font-size:.75rem;font-weight:700;color:#4dcdc4;min-width:32px;text-align:right}
+.is{font-size:.78rem;color:#8b90a5;line-height:1.6}
+.is b{color:#e8eaf0}
+.sp{display:flex;gap:.5rem;margin-bottom:.4rem;align-items:flex-start}
+.sn{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(77,205,196,.1);color:#4dcdc4;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(77,205,196,.2)}
+.ac{display:flex;gap:.5rem}
+.bt{flex:1;padding:.6rem;border:1px solid #2e3346;border-radius:7px;background:#242836;color:#e8eaf0;font-family:system-ui,sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .15s}
+.bt:hover{background:#2e3346}
+.bt.p{background:#4dcdc4;color:#0f1117;border-color:#4dcdc4;font-weight:600}
+.bt.p:hover{filter:brightness(1.1)}
+.bt:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.lg{margin-top:.5rem}
+.li{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#8b90a5;margin-bottom:.25rem}
+.lc{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.ex{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem;margin-top:1.2rem}
+.ex h3{font-family:Georgia,serif;font-size:.9rem;font-weight:600;margin-bottom:.6rem}
+.ex p{font-size:.8rem;color:#8b90a5;line-height:1.65;margin-bottom:.5rem}
+.ex p:last-child{margin-bottom:0}
+.hl{color:#4dcdc4;font-weight:600}
+.cmp{background:rgba(124,138,255,.06);border:1px solid rgba(124,138,255,.15);border-radius:8px;padding:.8rem;margin-top:.6rem}
+.cmp h4{font-size:.8rem;font-weight:600;color:#7c8aff;margin-bottom:.4rem;font-family:Georgia,serif}
+.cmp p{font-size:.78rem;margin-bottom:.3rem}
+.tt{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(70px);background:#242836;border:1px solid #2e3346;color:#e8eaf0;padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:500;opacity:0;transition:all .35s ease;pointer-events:none;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.tt.v{opacity:1;transform:translateX(-50%) translateY(0)}
+.hd{display:none}
+</style>
+</head>
+<body>
+<div class="c">
+  <header>
+    <div class="tg">Módulo 1 · Experiência Interativa</div>
+    <h1>Descobre os Grupos Escondidos</h1>
+    <p>Coloca pontos no gráfico — sem rótulos! O algoritmo vai descobrir sozinho que grupos existem nos teus dados.</p>
+  </header>
+  <div class="ly">
+    <div class="cc">
+      <div class="ch">
+        <h2>Espaço de Dados</h2>
+        <div class="st">Pontos: <b id="nP">0</b></div>
+      </div>
+      <div class="cw" id="wr">
+        <canvas id="cv"></canvas>
+        <span class="al x">Característica A →</span>
+        <span class="al y">Característica B →</span>
+      </div>
+    </div>
+    <div class="sb">
+      <div class="cd">
+        <div class="pi w" id="ph"><div class="pd"></div><span id="pt">A colocar dados</span></div>
+        <h3>Quantos grupos procurar?</h3>
+        <div class="cf">
+          <label>Valor de K (número de clusters):</label>
+          <div class="kr" id="kR"></div>
+        </div>
+        <div class="vs">
+          <label>Velocidade:</label>
+          <input type="range" min="1" max="10" value="5" id="spd">
+          <span class="vv" id="spV">5</span>
+        </div>
+      </div>
+      <div class="cd">
+        <h3>Como funciona</h3>
+        <div class="is">
+          <div class="sp"><span class="sn">1</span><span><b>Clica no gráfico</b> para colocar pontos (sem rótulos!)</span></div>
+          <div class="sp"><span class="sn">2</span><span>Escolhe <b>quantos grupos</b> (K) procurar</span></div>
+          <div class="sp"><span class="sn">3</span><span>Clica <b>Agrupar</b> e vê o K-Means em ação</span></div>
+        </div>
+      </div>
+      <div class="cd hd" id="lC">
+        <h3>Grupos encontrados</h3>
+        <div id="lL"></div>
+      </div>
+      <div class="ac">
+        <button class="bt" id="rB">Recomeçar</button>
+        <button class="bt" id="gB">Gerar pontos</button>
+        <button class="bt p" id="tB" disabled>Agrupar</button>
+      </div>
+    </div>
+  </div>
+  <div class="ex">
+    <h3>O que está a acontecer aqui?</h3>
+    <p>Repara na diferença: aqui <span class="hl">não deste rótulos</span> aos dados. Não disseste ao modelo o que cada ponto é. Mesmo assim, o algoritmo <span class="hl">K-Means</span> consegue encontrar padrões e agrupar pontos semelhantes.</p>
+    <p>O algoritmo funciona em passos: coloca centróides aleatórios, atribui cada ponto ao centróide mais próximo, recalcula a posição dos centróides, e repete até estabilizar. É como organizar uma gaveta sem instruções — agrupas naturalmente meias com meias e camisas com camisas.</p>
+    <p>Isto é <span class="hl">Aprendizagem Não Supervisionada</span>: o modelo encontra estrutura nos dados sem que um humano lhe diga o que procurar. É usada para segmentar clientes, detetar anomalias e comprimir dados.</p>
+    <div class="cmp">
+      <h4>Supervisionada vs. Não Supervisionada</h4>
+      <p><b>Supervisionada:</b> "Aqui tens maçãs e laranjas rotuladas — aprende a diferença."</p>
+      <p><b>Não Supervisionada:</b> "Aqui tens frutas sem rótulo — descobre que grupos existem."</p>
+    </div>
+  </div>
+</div>
+<div class="tt" id="to"></div>
+<script>
+(function(){
+var cv=document.getElementById("cv"),cx=cv.getContext("2d"),wr=document.getElementById("wr"),P=36;
+var pts=[],K=3,centroids=[],assignments=[],running=false,animId=null,vw=0,vh=0,iteration=0;
+var COLORS=["#ff6b6b","#4dcdc4","#ffa94d","#7c8aff","#a78bfa","#f472b6"];
+var COLORS_DIM=["rgba(255,107,107,.15)","rgba(77,205,196,.15)","rgba(255,169,77,.15)","rgba(124,138,255,.15)","rgba(167,139,250,.15)","rgba(244,114,182,.15)"];
+
+function rs(){
+  var r=wr.getBoundingClientRect();
+  vw=Math.floor(r.width);vh=Math.floor(vw*.75);
+  var d=window.devicePixelRatio||1;
+  cv.width=Math.floor(vw*d);cv.height=Math.floor(vh*d);
+  cv.style.width=vw+"px";cv.style.height=vh+"px";
+  cx.setTransform(d,0,0,d,0,0);dr()
+}
+
+// Build K buttons
+var kR=document.getElementById("kR");
+for(var ki=2;ki<=5;ki++){
+  var kb=document.createElement("button");
+  kb.className=ki===3?"kb on":"kb";
+  kb.textContent=ki;
+  kb.setAttribute("data-k",ki);
+  kR.appendChild(kb)
+}
+
+kR.addEventListener("click",function(e){
+  var t=e.target;if(!t.getAttribute("data-k"))return;
+  K=parseInt(t.getAttribute("data-k"));
+  var bs=kR.children;
+  for(var i=0;i<bs.length;i++)bs[i].className="kb";
+  t.className="kb on";
+  if(running)stopAnim();
+  centroids=[];assignments=[];
+  document.getElementById("ph").className="pi w";
+  document.getElementById("pt").textContent="A colocar dados";
+  document.getElementById("lC").className="cd hd";
+  dr()
+});
+
+document.getElementById("spd").addEventListener("input",function(){
+  document.getElementById("spV").textContent=this.value
+});
+
+cv.addEventListener("click",function(e){
+  if(running)return;
+  var r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  var pw=vw-2*P,ph=vh-2*P,nx=(mx-P)/pw,ny=1-(my-P)/ph;
+  if(nx<0||nx>1||ny<0||ny>1)return;
+  pts.push({x:nx,y:ny});
+  centroids=[];assignments=[];
+  document.getElementById("ph").className="pi w";
+  document.getElementById("pt").textContent="A colocar dados";
+  document.getElementById("lC").className="cd hd";
+  uc();dr()
+});
+
+function uc(){
+  document.getElementById("nP").textContent=pts.length;
+  document.getElementById("tB").disabled=pts.length<K
+}
+
+function tt(m){
+  var t=document.getElementById("to");t.textContent=m;t.className="tt v";
+  setTimeout(function(){t.className="tt"},2200)
+}
+
+function genPts(){
+  if(running)stopAnim();
+  pts=[];centroids=[];assignments=[];
+  var nClusters=K,ptsPerCluster=12+Math.floor(Math.random()*8);
+  for(var c=0;c<nClusters;c++){
+    var cx0=.15+Math.random()*.7,cy0=.15+Math.random()*.7;
+    for(var j=0;j<ptsPerCluster;j++){
+      var angle=Math.random()*Math.PI*2,rad=(.03+Math.random()*.1);
+      var px=cx0+Math.cos(angle)*rad,py=cy0+Math.sin(angle)*rad;
+      px=Math.max(0,Math.min(1,px));py=Math.max(0,Math.min(1,py));
+      pts.push({x:px,y:py})
+    }
+  }
+  document.getElementById("ph").className="pi w";
+  document.getElementById("pt").textContent="A colocar dados";
+  document.getElementById("lC").className="cd hd";
+  uc();dr();tt("Dados gerados automaticamente!")
+}
+
+function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy)}
+
+function initCentroids(){
+  centroids=[];
+  var used={};
+  for(var i=0;i<K;i++){
+    var idx;
+    do{idx=Math.floor(Math.random()*pts.length)}while(used[idx]);
+    used[idx]=true;
+    centroids.push({x:pts[idx].x,y:pts[idx].y})
+  }
+  assignments=new Array(pts.length);
+  for(var i=0;i<pts.length;i++)assignments[i]=0;
+  iteration=0
+}
+
+function stepKMeans(){
+  // Assign
+  var changed=false;
+  for(var i=0;i<pts.length;i++){
+    var best=0,bestD=dist(pts[i],centroids[0]);
+    for(var j=1;j<centroids.length;j++){
+      var d=dist(pts[i],centroids[j]);
+      if(d<bestD){bestD=d;best=j}
+    }
+    if(assignments[i]!==best)changed=true;
+    assignments[i]=best
+  }
+  // Update centroids
+  for(var j=0;j<centroids.length;j++){
+    var sx=0,sy=0,cnt=0;
+    for(var i=0;i<pts.length;i++){
+      if(assignments[i]===j){sx+=pts[i].x;sy+=pts[i].y;cnt++}
+    }
+    if(cnt>0){centroids[j]={x:sx/cnt,y:sy/cnt}}
+  }
+  iteration++;
+  return changed
+}
+
+function stopAnim(){
+  running=false;
+  if(animId){clearTimeout(animId);animId=null}
+}
+
+function runKMeans(){
+  if(pts.length<K)return;
+  if(running)stopAnim();
+  initCentroids();
+  running=true;
+  document.getElementById("ph").className="pi w";
+  document.getElementById("pt").textContent="A agrupar... iteração "+iteration;
+  dr();
+
+  function step(){
+    if(!running)return;
+    var changed=stepKMeans();
+    document.getElementById("pt").textContent="A agrupar... iteração "+iteration;
+    dr();
+    if(changed&&iteration<50){
+      var spd=parseInt(document.getElementById("spd").value)||5;
+      var delay=Math.max(50,600-spd*55);
+      animId=setTimeout(step,delay)
+    }else{
+      running=false;
+      document.getElementById("ph").className="pi d";
+      document.getElementById("pt").textContent="Agrupamento completo!";
+      showLegend();
+      tt("K-Means convergiu em "+iteration+" iterações!")
+    }
+  }
+  var spd=parseInt(document.getElementById("spd").value)||5;
+  animId=setTimeout(step,Math.max(50,600-spd*55))
+}
+
+function showLegend(){
+  var lC=document.getElementById("lC");
+  lC.className="cd";
+  var lL=document.getElementById("lL");
+  lL.innerHTML="";
+  for(var j=0;j<K;j++){
+    var cnt=0;
+    for(var i=0;i<assignments.length;i++)if(assignments[i]===j)cnt++;
+    var li=document.createElement("div");li.className="li";
+    var dot=document.createElement("div");dot.className="lc";dot.style.background=COLORS[j%6];
+    var txt=document.createElement("span");txt.textContent="Grupo "+(j+1)+": "+cnt+" pontos";
+    li.appendChild(dot);li.appendChild(txt);lL.appendChild(li)
+  }
+}
+
+function re(){
+  stopAnim();pts=[];centroids=[];assignments=[];iteration=0;uc();
+  document.getElementById("ph").className="pi w";
+  document.getElementById("pt").textContent="A colocar dados";
+  document.getElementById("lC").className="cd hd";
+  dr();tt("Tudo limpo!")
+}
+
+function dr(){
+  if(!vw||!vh)return;
+  cx.clearRect(0,0,vw,vh);
+  var px=P,py=P,pw=vw-2*P,ph=vh-2*P,i;
+
+  // Grid
+  cx.strokeStyle="rgba(46,51,70,.45)";cx.lineWidth=1;
+  for(i=0;i<=10;i++){
+    var gx=px+(pw/10)*i,gy=py+(ph/10)*i;
+    cx.beginPath();cx.moveTo(gx,py);cx.lineTo(gx,py+ph);cx.stroke();
+    cx.beginPath();cx.moveTo(px,gy);cx.lineTo(px+pw,gy);cx.stroke()
+  }
+  cx.strokeStyle="rgba(139,144,165,.35)";cx.lineWidth=1.5;
+  cx.beginPath();cx.moveTo(px,py+ph);cx.lineTo(px+pw,py+ph);cx.stroke();
+  cx.beginPath();cx.moveTo(px,py);cx.lineTo(px,py+ph);cx.stroke();
+
+  // Voronoi regions (simple pixel coloring) - only after clustering
+  if(centroids.length>0){
+    try{
+      var iw=Math.max(1,Math.ceil(pw)),ih=Math.max(1,Math.ceil(ph));
+      var im=cx.createImageData(iw,ih),dd=im.data;
+      for(var qy=0;qy<ih;qy++){
+        for(var qx=0;qx<iw;qx++){
+          var nx=qx/pw,ny=1-qy/ph;
+          var best=0,bestD=1e9;
+          for(var j=0;j<centroids.length;j++){
+            var dx=nx-centroids[j].x,dy=ny-centroids[j].y,d2=dx*dx+dy*dy;
+            if(d2<bestD){bestD=d2;best=j}
+          }
+          var idx=(qy*iw+qx)*4;
+          var col=COLORS[best%6];
+          // Parse hex
+          var r2=parseInt(col.substring(1,3),16);
+          var g2=parseInt(col.substring(3,5),16);
+          var b2=parseInt(col.substring(5,7),16);
+          dd[idx]=r2;dd[idx+1]=g2;dd[idx+2]=b2;dd[idx+3]=18
+        }
+      }
+      cx.putImageData(im,Math.floor(px),Math.floor(py))
+    }catch(e){}
+  }
+
+  // Connection lines (point to centroid)
+  if(centroids.length>0&&assignments.length===pts.length){
+    cx.lineWidth=1;
+    for(i=0;i<pts.length;i++){
+      var a=assignments[i];
+      if(a>=0&&a<centroids.length){
+        var sx=px+pts[i].x*pw,sy=py+ph*(1-pts[i].y);
+        var ex=px+centroids[a].x*pw,ey=py+ph*(1-centroids[a].y);
+        cx.strokeStyle=COLORS_DIM[a%6];
+        cx.beginPath();cx.moveTo(sx,sy);cx.lineTo(ex,ey);cx.stroke()
+      }
+    }
+  }
+
+  // Points
+  for(i=0;i<pts.length;i++){
+    var pt=pts[i],sx=px+pt.x*pw,sy=py+ph*(1-pt.y);
+    var col=centroids.length>0&&assignments.length>i?COLORS[assignments[i]%6]:"#8b90a5";
+    cx.beginPath();cx.arc(sx,sy,12,0,Math.PI*2);
+    cx.fillStyle=centroids.length>0&&assignments.length>i?COLORS_DIM[assignments[i]%6]:"rgba(139,144,165,.12)";
+    cx.fill();
+    cx.beginPath();cx.arc(sx,sy,6,0,Math.PI*2);
+    cx.fillStyle=col;cx.fill();
+    cx.strokeStyle="rgba(255,255,255,.15)";cx.lineWidth=1;cx.stroke()
+  }
+
+  // Centroids
+  if(centroids.length>0){
+    for(i=0;i<centroids.length;i++){
+      var cc=centroids[i],sx=px+cc.x*pw,sy=py+ph*(1-cc.y);
+      // Outer glow
+      cx.beginPath();cx.arc(sx,sy,18,0,Math.PI*2);
+      cx.fillStyle=COLORS_DIM[i%6];cx.fill();
+      // Diamond shape
+      cx.fillStyle=COLORS[i%6];
+      cx.beginPath();
+      cx.moveTo(sx,sy-10);cx.lineTo(sx+8,sy);cx.lineTo(sx,sy+10);cx.lineTo(sx-8,sy);
+      cx.closePath();cx.fill();
+      cx.strokeStyle="rgba(255,255,255,.4)";cx.lineWidth=1.5;cx.stroke();
+      // Label
+      cx.fillStyle="#fff";cx.font="bold 8px system-ui,sans-serif";
+      cx.textAlign="center";cx.textBaseline="middle";
+      cx.fillText("C"+(i+1),sx,sy)
+    }
+  }
+}
+
+document.getElementById("tB").addEventListener("click",runKMeans);
+document.getElementById("rB").addEventListener("click",re);
+document.getElementById("gB").addEventListener("click",genPts);
+
+window.addEventListener("resize",rs);
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",rs);
+else setTimeout(rs,0);
+})();
+</script>
+</body>
+</html>
