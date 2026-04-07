@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Aprendizagem Supervisionada</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #242836;
+    --border: #2e3346;
+    --text: #e8eaf0;
+    --text-muted: #8b90a5;
+    --apple-red: #ff6b6b;
+    --apple-glow: rgba(255,107,107,0.15);
+    --orange: #ffa94d;
+    --orange-glow: rgba(255,169,77,0.15);
+    --accent: #7c8aff;
+    --accent-glow: rgba(124,138,255,0.12);
+    --boundary: #7c8aff;
+    --success: #69db7c;
+    --radius: 12px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  header .tag {
+    display: inline-block;
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(124,138,255,0.2);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+  }
+
+  header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* Canvas area */
+  .canvas-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .canvas-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .canvas-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .canvas-header .stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .stats .count {
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .canvas-body {
+    position: relative;
+    aspect-ratio: 4/3;
+    cursor: crosshair;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .axis-label {
+    position: absolute;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .axis-label.x {
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .axis-label.y {
+    top: 50%;
+    left: -2px;
+    transform: rotate(-90deg) translateX(-50%);
+    transform-origin: left center;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Fruit selector */
+  .fruit-options {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .fruit-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .fruit-btn .emoji {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .fruit-btn .label {
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .fruit-btn.active-apple {
+    border-color: var(--apple-red);
+    background: var(--apple-glow);
+  }
+
+  .fruit-btn.active-orange {
+    border-color: var(--orange);
+    background: var(--orange-glow);
+  }
+
+  .fruit-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Instructions */
+  .instructions {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  .instructions strong {
+    color: var(--text);
+  }
+
+  .step {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    border: 1px solid rgba(124,138,255,0.25);
+  }
+
+  /* Accuracy meter */
+  .accuracy-section {
+    margin-top: 0.25rem;
+  }
+
+  .accuracy-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .accuracy-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .accuracy-value {
+    font-size: 1.8rem;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .accuracy-label {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Buttons */
+  .actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    background: var(--border);
+    transform: translateY(-1px);
+  }
+
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .btn.primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Explanation panel */
+  .explanation {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .explanation h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .explanation p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 0.6rem;
+  }
+
+  .explanation p:last-child { margin-bottom: 0; }
+
+  .highlight {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Phase indicator */
+  .phase-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .phase-indicator.teaching {
+    background: rgba(255,169,77,0.1);
+    color: var(--orange);
+    border: 1px solid rgba(255,169,77,0.2);
+  }
+
+  .phase-indicator.trained {
+    background: rgba(105,219,124,0.1);
+    color: var(--success);
+    border: 1px solid rgba(105,219,124,0.2);
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="tag">Módulo 1 · Experiência Interativa</div>
+    <h1>Ensina o Modelo a Distinguir Frutas</h1>
+    <p>Tu és o professor. Clica no gráfico para ensinar ao modelo a diferença entre maçãs e laranjas. Vê como ele aprende em tempo real.</p>
+  </header>
+
+  <div class="layout">
+    <div class="canvas-card">
+      <div class="canvas-header">
+        <h2>Espaço de Treino</h2>
+        <div class="stats">
+          <span>🍎 Maçãs: <span class="count" id="appleCount">0</span></span>
+          <span>🍊 Laranjas: <span class="count" id="orangeCount">0</span></span>
+        </div>
+      </div>
+      <div class="canvas-body">
+        <canvas id="mainCanvas"></canvas>
+        <span class="axis-label x">Tamanho →</span>
+        <span class="axis-label y">Intensidade da Cor →</span>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card">
+        <div class="phase-indicator teaching" id="phaseIndicator">
+          <div class="pulse-dot"></div>
+          <span id="phaseText">Fase de Ensino</span>
+        </div>
+        <h3>Que fruta estás a colocar?</h3>
+        <div class="fruit-options">
+          <button class="fruit-btn active-apple" id="btnApple" onclick="selectFruit('apple')">
+            <span class="emoji">🍎</span>
+            <span class="label">Maçã</span>
+          </button>
+          <button class="fruit-btn" id="btnOrange" onclick="selectFruit('orange')">
+            <span class="emoji">🍊</span>
+            <span class="label">Laranja</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Como funciona</h3>
+        <div class="instructions">
+          <div class="step">
+            <span class="step-num">1</span>
+            <span>Escolhe <strong>🍎 Maçã</strong> ou <strong>🍊 Laranja</strong></span>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <span><strong>Clica no gráfico</strong> para colocar exemplos</span>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <span>Com 3+ de cada, clica <strong>Treinar</strong> e vê a magia</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card accuracy-section" id="accuracyCard" style="display:none">
+        <h3>Precisão do Modelo</h3>
+        <div class="accuracy-value" id="accuracyValue">—</div>
+        <div class="accuracy-bar-bg">
+          <div class="accuracy-bar-fill" id="accuracyBar"></div>
+        </div>
+        <div class="accuracy-label">baseada nos dados de treino</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" onclick="resetAll()">Recomeçar</button>
+        <button class="btn primary" id="trainBtn" onclick="trainModel()" disabled>Treinar Modelo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="explanation">
+    <h3>💡 O que está a acontecer aqui?</h3>
+    <p>Cada ponto que colocas é um <span class="highlight">exemplo rotulado</span> — um dado com uma etiqueta ("maçã" ou "laranja"). Estás a fazer exatamente o que os cientistas de dados fazem: fornecer dados de treino ao modelo.</p>
+    <p>Quando clicas em "Treinar", o modelo analisa os padrões e traça uma <span class="highlight">fronteira de decisão</span> — uma linha que separa as duas categorias. Tudo de um lado será classificado como maçã, e do outro como laranja.</p>
+    <p>Isto é a <span class="highlight">Aprendizagem Supervisionada</span>: o modelo aprende a partir de exemplos que nós, humanos, classificámos previamente. É assim que funcionam filtros de spam, diagnósticos médicos, e reconhecimento de imagem.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const PADDING = 40;
+
+let selectedFruit = 'apple';
+let dataPoints = [];
+let trained = false;
+let weights = null;
+let bias = null;
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+  draw();
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function selectFruit(fruit) {
+  selectedFruit = fruit;
+  document.getElementById('btnApple').className = fruit === 'apple' ? 'fruit-btn active-apple' : 'fruit-btn';
+  document.getElementById('btnOrange').className = fruit === 'orange' ? 'fruit-btn active-orange' : 'fruit-btn';
+}
+
+function getCanvasSize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  return { w: rect.width, h: rect.height };
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const { w, h } = getCanvasSize();
+
+  // Normalize to 0-1
+  const nx = (x - PADDING) / (w - 2 * PADDING);
+  const ny = 1 - (y - PADDING) / (h - 2 * PADDING);
+
+  if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
+
+  dataPoints.push({ x: nx, y: ny, label: selectedFruit });
+  trained = false;
+  weights = null;
+
+  // Update phase
+  document.getElementById('phaseIndicator').className = 'phase-indicator teaching';
+  document.getElementById('phaseText').textContent = 'Fase de Ensino';
+  document.getElementById('accuracyCard').style.display = 'none';
+
+  updateCounts();
+  draw();
+  checkTrainReady();
+});
+
+function updateCounts() {
+  const apples = dataPoints.filter(d => d.label === 'apple').length;
+  const oranges = dataPoints.filter(d => d.label === 'orange').length;
+  document.getElementById('appleCount').textContent = apples;
+  document.getElementById('orangeCount').textContent = oranges;
+}
+
+function checkTrainReady() {
+  const apples = dataPoints.filter(d => d.label === 'apple').length;
+  const oranges = dataPoints.filter(d => d.label === 'orange').length;
+  const btn = document.getElementById('trainBtn');
+  btn.disabled = !(apples >= 3 && oranges >= 3);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// Simple logistic regression via gradient descent
+function trainModel() {
+  if (dataPoints.length < 6) return;
+
+  // Initialize
+  let w1 = Math.random() * 0.5 - 0.25;
+  let w2 = Math.random() * 0.5 - 0.25;
+  let b = 0;
+  const lr = 2.0;
+  const epochs = 500;
+
+  for (let epoch = 0; epoch < epochs; epoch++) {
+    let dw1 = 0, dw2 = 0, db = 0;
+    for (const p of dataPoints) {
+      const target = p.label === 'apple' ? 0 : 1;
+      const z = w1 * p.x + w2 * p.y + b;
+      const pred = 1 / (1 + Math.exp(-z));
+      const error = pred - target;
+      dw1 += error * p.x;
+      dw2 += error * p.y;
+      db += error;
+    }
+    w1 -= lr * dw1 / dataPoints.length;
+    w2 -= lr * dw2 / dataPoints.length;
+    b -= lr * db / dataPoints.length;
+  }
+
+  weights = [w1, w2];
+  bias = b;
+  trained = true;
+
+  // Calculate accuracy
+  let correct = 0;
+  for (const p of dataPoints) {
+    const z = weights[0] * p.x + weights[1] * p.y + bias;
+    const pred = 1 / (1 + Math.exp(-z));
+    const predLabel = pred > 0.5 ? 'orange' : 'apple';
+    if (predLabel === p.label) correct++;
+  }
+  const accuracy = Math.round(correct / dataPoints.length * 100);
+
+  // Update UI
+  document.getElementById('phaseIndicator').className = 'phase-indicator trained';
+  document.getElementById('phaseText').textContent = 'Modelo Treinado!';
+  document.getElementById('accuracyCard').style.display = 'block';
+  document.getElementById('accuracyValue').textContent = accuracy + '%';
+  document.getElementById('accuracyBar').style.width = accuracy + '%';
+
+  showToast('✨ Modelo treinado com ' + accuracy + '% de precisão!');
+  draw();
+}
+
+function resetAll() {
+  dataPoints = [];
+  trained = false;
+  weights = null;
+  bias = null;
+  updateCounts();
+  checkTrainReady();
+  document.getElementById('phaseIndicator').className = 'phase-indicator teaching';
+  document.getElementById('phaseText').textContent = 'Fase de Ensino';
+  document.getElementById('accuracyCard').style.display = 'none';
+  draw();
+  showToast('🔄 Tudo limpo — começa de novo!');
+}
+
+function draw() {
+  const { w, h } = getCanvasSize();
+  ctx.clearRect(0, 0, w, h);
+
+  const plotX = PADDING;
+  const plotY = PADDING;
+  const plotW = w - 2 * PADDING;
+  const plotH = h - 2 * PADDING;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(46,51,70,0.6)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const x = plotX + (plotW / 10) * i;
+    const y = plotY + (plotH / 10) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, plotY);
+    ctx.lineTo(x, plotY + plotH);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(plotX, y);
+    ctx.lineTo(plotX + plotW, y);
+    ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = 'rgba(139,144,165,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(plotX, plotY + plotH);
+  ctx.lineTo(plotX + plotW, plotY + plotH);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(plotX, plotY);
+  ctx.lineTo(plotX, plotY + plotH);
+  ctx.stroke();
+
+  // Decision regions (colored background)
+  if (trained && weights) {
+    const imgData = ctx.createImageData(Math.ceil(plotW), Math.ceil(plotH));
+    for (let py = 0; py < Math.ceil(plotH); py++) {
+      for (let px = 0; px < Math.ceil(plotW); px++) {
+        const nx = px / plotW;
+        const ny = 1 - py / plotH;
+        const z = weights[0] * nx + weights[1] * ny + bias;
+        const prob = 1 / (1 + Math.exp(-z));
+        const idx = (py * Math.ceil(plotW) + px) * 4;
+        if (prob > 0.5) {
+          // Orange zone
+          imgData.data[idx] = 255;
+          imgData.data[idx+1] = 169;
+          imgData.data[idx+2] = 77;
+          imgData.data[idx+3] = 25;
+        } else {
+          // Apple zone
+          imgData.data[idx] = 255;
+          imgData.data[idx+1] = 107;
+          imgData.data[idx+2] = 107;
+          imgData.data[idx+3] = 25;
+        }
+      }
+    }
+    ctx.putImageData(imgData, plotX, plotY);
+
+    // Decision boundary line
+    ctx.strokeStyle = 'rgba(124,138,255,0.8)';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([8, 4]);
+    ctx.beginPath();
+    let started = false;
+    for (let px = 0; px <= plotW; px++) {
+      const nx = px / plotW;
+      // w1*x + w2*y + b = 0 => y = -(w1*x + b) / w2
+      const ny = -(weights[0] * nx + bias) / weights[1];
+      const screenY = plotY + plotH * (1 - ny);
+      if (ny >= 0 && ny <= 1) {
+        if (!started) {
+          ctx.moveTo(plotX + px, screenY);
+          started = true;
+        } else {
+          ctx.lineTo(plotX + px, screenY);
+        }
+      }
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label on boundary
+    const midNx = 0.5;
+    const midNy = -(weights[0] * midNx + bias) / weights[1];
+    if (midNy >= 0 && midNy <= 1) {
+      const lx = plotX + midNx * plotW;
+      const ly = plotY + plotH * (1 - midNy);
+      ctx.fillStyle = 'rgba(15,17,23,0.85)';
+      ctx.beginPath();
+      const lblW = 120, lblH = 22;
+      const rx = lx - lblW/2, ry = ly - lblH - 10;
+      ctx.roundRect(rx, ry, lblW, lblH, 4);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(124,138,255,0.9)';
+      ctx.font = '500 11px "DM Sans"';
+      ctx.textAlign = 'center';
+      ctx.fillText('Fronteira de decisão', lx, ry + 15);
+    }
+  }
+
+  // Data points
+  for (const p of dataPoints) {
+    const sx = plotX + p.x * plotW;
+    const sy = plotY + plotH * (1 - p.y);
+    const isApple = p.label === 'apple';
+    const color = isApple ? '#ff6b6b' : '#ffa94d';
+
+    // Glow
+    ctx.beginPath();
+    ctx.arc(sx, sy, 14, 0, Math.PI * 2);
+    ctx.fillStyle = isApple ? 'rgba(255,107,107,0.15)' : 'rgba(255,169,77,0.15)';
+    ctx.fill();
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(sx, sy, 7, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Emoji
+    ctx.font = '12px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(isApple ? '🍎' : '🍊', sx, sy);
+  }
+}
+</script>
+
+</body>
+</html>
