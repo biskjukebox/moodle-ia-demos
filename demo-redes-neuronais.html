@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Como Funciona um Neurónio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f1117;color:#e8eaf0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+.c{max-width:800px;margin:0 auto;padding:1.5rem 1rem 2.5rem}
+header{text-align:center;margin-bottom:1.8rem}
+.tg{display:inline-block;background:rgba(167,139,250,.12);color:#a78bfa;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.3rem .8rem;border-radius:20px;margin-bottom:.8rem;border:1px solid rgba(167,139,250,.2)}
+h1{font-family:Georgia,serif;font-weight:700;font-size:clamp(1.3rem,3.5vw,2rem);line-height:1.25;margin-bottom:.5rem}
+header p{color:#8b90a5;font-size:.88rem;max-width:480px;margin:0 auto;line-height:1.55}
+
+/* Step cards */
+.steps{display:flex;flex-direction:column;gap:1rem}
+.step{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1.1rem;position:relative}
+.step-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem}
+.step-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}
+.step-num.s1{background:rgba(124,138,255,.12);color:#7c8aff;border:1px solid rgba(124,138,255,.25)}
+.step-num.s2{background:rgba(250,176,5,.12);color:#fab005;border:1px solid rgba(250,176,5,.25)}
+.step-num.s3{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.25)}
+.step-num.s4{background:rgba(105,219,124,.12);color:#69db7c;border:1px solid rgba(105,219,124,.25)}
+.step-title{font-family:Georgia,serif;font-size:.9rem;font-weight:600}
+.step-desc{font-size:.78rem;color:#8b90a5;line-height:1.55;margin-bottom:.7rem}
+
+/* Input rows */
+.irow{display:flex;align-items:center;gap:.6rem;margin-bottom:.55rem;padding:.45rem .6rem;background:rgba(255,255,255,.02);border-radius:7px;border:1px solid rgba(46,51,70,.5)}
+.irow .emoji{font-size:1.2rem;flex-shrink:0;width:28px;text-align:center}
+.irow .name{font-size:.74rem;color:#8b90a5;min-width:75px}
+.irow input[type=range]{flex:1;accent-color:#7c8aff;height:4px}
+.irow .val{font-size:.78rem;font-weight:700;color:#e8eaf0;min-width:28px;text-align:right}
+
+/* Weight rows */
+.wrow{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.4rem .6rem;background:rgba(255,255,255,.02);border-radius:7px;border:1px solid rgba(46,51,70,.5)}
+.wrow .lbl{font-size:.72rem;color:#8b90a5;min-width:55px}
+.wrow input[type=range]{flex:1;accent-color:#fab005;height:4px}
+.wrow .val{font-size:.78rem;font-weight:700;min-width:38px;text-align:right}
+.wrow .val.pos{color:#69db7c}
+.wrow .val.neg{color:#ff6b6b}
+.wrow .val.zer{color:#8b90a5}
+.wrow .calc{font-size:.68rem;color:#8b90a5;min-width:80px;text-align:right;font-family:monospace}
+
+/* Equation display */
+.eq{text-align:center;padding:.7rem;background:rgba(250,176,5,.05);border:1px solid rgba(250,176,5,.12);border-radius:8px;margin-top:.3rem}
+.eq .formula{font-size:.82rem;color:#fab005;font-family:monospace;font-weight:600;letter-spacing:.02em;word-break:break-all}
+.eq .result{font-size:1.3rem;font-family:Georgia,serif;font-weight:700;color:#e8eaf0;margin-top:.3rem}
+.eq .label{font-size:.68rem;color:#8b90a5;margin-top:.15rem}
+
+/* Activation viz */
+.act-viz{position:relative;margin-top:.3rem}
+.act-viz canvas{display:block;width:100%;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(46,51,70,.5)}
+
+/* Output display */
+.out-box{text-align:center;padding:1rem;border-radius:10px;margin-top:.3rem}
+.out-box.on{background:rgba(105,219,124,.08);border:1px solid rgba(105,219,124,.2)}
+.out-box.off{background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.15)}
+.out-icon{font-size:2.5rem;margin-bottom:.3rem}
+.out-val{font-size:1.6rem;font-family:Georgia,serif;font-weight:700}
+.out-val.on{color:#69db7c}
+.out-val.off{color:#ff6b6b}
+.out-lbl{font-size:.75rem;color:#8b90a5;margin-top:.2rem}
+
+/* Meter bar */
+.meter{display:flex;align-items:center;gap:.5rem;margin-top:.5rem}
+.meter-lbl{font-size:.68rem;color:#8b90a5;min-width:22px}
+.meter-bg{flex:1;height:10px;background:#242836;border-radius:5px;overflow:hidden}
+.meter-fill{height:100%;border-radius:5px;transition:width .3s ease,background .3s ease}
+
+/* Analogy */
+.analogy{background:rgba(77,205,196,.06);border:1px solid rgba(77,205,196,.15);border-radius:8px;padding:.8rem;margin-top:.5rem}
+.analogy p{font-size:.78rem;color:#8b90a5;line-height:1.6}
+.analogy b{color:#4dcdc4}
+
+/* Explanation */
+.ex{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem;margin-top:1.2rem}
+.ex h3{font-family:Georgia,serif;font-size:.9rem;font-weight:600;margin-bottom:.6rem}
+.ex p{font-size:.8rem;color:#8b90a5;line-height:1.65;margin-bottom:.5rem}
+.ex p:last-child{margin-bottom:0}
+.hl{color:#a78bfa;font-weight:600}
+.dl{background:rgba(250,176,5,.06);border:1px solid rgba(250,176,5,.15);border-radius:8px;padding:.8rem;margin-top:.6rem}
+.dl h4{font-size:.8rem;font-weight:600;color:#fab005;margin-bottom:.4rem;font-family:Georgia,serif}
+.dl p{font-size:.78rem;margin-bottom:.25rem}
+.dl p:last-child{margin-bottom:0}
+
+.tt{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(70px);background:#242836;border:1px solid #2e3346;color:#e8eaf0;padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:500;opacity:0;transition:all .35s ease;pointer-events:none;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.tt.vi{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="c">
+  <header>
+    <div class="tg">Módulo 1 · Experiência Interativa</div>
+    <h1>Dentro de um Neurónio Artificial</h1>
+    <p>Percebe passo a passo o que acontece dentro de um único neurónio — o bloco fundamental de todas as redes neuronais.</p>
+  </header>
+
+  <div class="steps">
+
+    <!-- STEP 1: INPUTS -->
+    <div class="step">
+      <div class="step-head">
+        <div class="step-num s1">1</div>
+        <div class="step-title">Os sinais de entrada (inputs)</div>
+      </div>
+      <div class="step-desc">Imagina que o neurónio está a decidir: <b>"Devo levar guarda-chuva?"</b>. Recebe 3 informações do mundo:</div>
+      <div class="irow">
+        <span class="emoji">🌧</span>
+        <span class="name">Nuvens</span>
+        <input type="range" min="0" max="100" value="80" id="i0">
+        <span class="val" id="iv0">0.8</span>
+      </div>
+      <div class="irow">
+        <span class="emoji">💨</span>
+        <span class="name">Vento</span>
+        <input type="range" min="0" max="100" value="40" id="i1">
+        <span class="val" id="iv1">0.4</span>
+      </div>
+      <div class="irow">
+        <span class="emoji">📱</span>
+        <span class="name">Previsão</span>
+        <input type="range" min="0" max="100" value="90" id="i2">
+        <span class="val" id="iv2">0.9</span>
+      </div>
+    </div>
+
+    <!-- STEP 2: WEIGHTS -->
+    <div class="step">
+      <div class="step-head">
+        <div class="step-num s2">2</div>
+        <div class="step-title">Multiplicar pelos pesos (importância)</div>
+      </div>
+      <div class="step-desc">Nem todas as informações são igualmente importantes. Os <b>pesos</b> dizem ao neurónio quanto confiar em cada input. Ajusta-os!</div>
+      <div class="wrow">
+        <span class="lbl">🌧 Peso:</span>
+        <input type="range" min="-100" max="100" value="70" id="w0">
+        <span class="val pos" id="wv0">+0.7</span>
+        <span class="calc" id="wc0">0.8 × 0.7 = 0.56</span>
+      </div>
+      <div class="wrow">
+        <span class="lbl">💨 Peso:</span>
+        <input type="range" min="-100" max="100" value="30" id="w1">
+        <span class="val pos" id="wv1">+0.3</span>
+        <span class="calc" id="wc1">0.4 × 0.3 = 0.12</span>
+      </div>
+      <div class="wrow">
+        <span class="lbl">📱 Peso:</span>
+        <input type="range" min="-100" max="100" value="90" id="w2">
+        <span class="val pos" id="wv2">+0.9</span>
+        <span class="calc" id="wc2">0.9 × 0.9 = 0.81</span>
+      </div>
+      <div class="eq">
+        <div class="formula" id="sumFormula">0.56 + 0.12 + 0.81 = 1.49</div>
+        <div class="result" id="sumResult">Soma: 1.49</div>
+        <div class="label">soma ponderada de todos os inputs × pesos</div>
+      </div>
+    </div>
+
+    <!-- STEP 3: ACTIVATION -->
+    <div class="step">
+      <div class="step-head">
+        <div class="step-num s3">3</div>
+        <div class="step-title">Função de ativação (a decisão)</div>
+      </div>
+      <div class="step-desc">A soma ponderada passa por uma <b>função de ativação</b> (Sigmoid) que a transforma num valor entre 0 e 1 — como um "termómetro de certeza".</div>
+      <div class="act-viz">
+        <canvas id="acv"></canvas>
+      </div>
+    </div>
+
+    <!-- STEP 4: OUTPUT -->
+    <div class="step">
+      <div class="step-head">
+        <div class="step-num s4">4</div>
+        <div class="step-title">O output (a resposta do neurónio)</div>
+      </div>
+      <div class="step-desc">O neurónio "dispara" o resultado. Quanto mais próximo de 1, mais confiante está na decisão.</div>
+      <div class="out-box on" id="outBox">
+        <div class="out-icon" id="outIco">🌂</div>
+        <div class="out-val on" id="outVal">0.82</div>
+        <div class="out-lbl" id="outLbl">Sim, leva o guarda-chuva!</div>
+      </div>
+      <div class="meter">
+        <span class="meter-lbl">0</span>
+        <div class="meter-bg"><div class="meter-fill" id="outBar" style="width:82%;background:#69db7c"></div></div>
+        <span class="meter-lbl">1</span>
+      </div>
+      <div class="analogy">
+        <p><b>Analogia:</b> O neurónio é como uma pessoa a decidir — ouve várias opiniões (inputs), dá mais importância a umas que a outras (pesos), faz uma soma na cabeça (soma ponderada) e toma uma decisão de sim ou não (ativação). Uma rede neuronal são milhares destes a trabalhar em conjunto!</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ex">
+    <h3>De um neurónio a uma rede inteira</h3>
+    <p>Acabaste de ver o bloco fundamental. Uma <span class="hl">rede neuronal</span> junta centenas ou milhares destes neurónios em camadas — o output de uns torna-se o input de outros.</p>
+    <p>Durante o <span class="hl">treino</span>, a rede ajusta automaticamente todos os pesos (que aqui ajustaste à mão) até encontrar a combinação que dá as melhores respostas. Isto chama-se <span class="hl">backpropagation</span>.</p>
+    <div class="dl">
+      <h4>Neurónio → Rede → Deep Learning</h4>
+      <p><b>1 neurónio</b> — toma uma decisão simples (o que viste aqui)</p>
+      <p><b>Rede neuronal</b> — camadas de neurónios ligados entre si</p>
+      <p><b>Deep Learning</b> — redes com muitas camadas (profundas), capazes de aprender padrões complexos como reconhecer rostos ou gerar texto</p>
+    </div>
+  </div>
+</div>
+<div class="tt" id="to"></div>
+<script>
+(function(){
+  var ins=[0.8, 0.4, 0.9];
+  var ws=[0.7, 0.3, 0.9];
+
+  function sigmoid(x){return 1/(1+Math.exp(-x))}
+
+  function calc(){
+    var prods=[];
+    for(var i=0;i<3;i++) prods.push(ins[i]*ws[i]);
+    var sum=0;
+    for(var i=0;i<3;i++) sum+=prods[i];
+    var out=sigmoid(sum);
+    return {prods:prods, sum:sum, out:out};
+  }
+
+  function updateAll(){
+    var r=calc();
+
+    // Update input displays
+    for(var i=0;i<3;i++){
+      document.getElementById("iv"+i).textContent=ins[i].toFixed(1);
+    }
+
+    // Update weight displays and calculations
+    for(var i=0;i<3;i++){
+      var wEl=document.getElementById("wv"+i);
+      var w=ws[i];
+      wEl.textContent=(w>=0?"+":"")+w.toFixed(1);
+      wEl.className=w>0?"val pos":w<0?"val neg":"val zer";
+      document.getElementById("wc"+i).textContent=ins[i].toFixed(1)+" x "+w.toFixed(1)+" = "+r.prods[i].toFixed(2);
+    }
+
+    // Sum formula
+    var parts=[];
+    for(var i=0;i<3;i++) parts.push(r.prods[i].toFixed(2));
+    document.getElementById("sumFormula").textContent=parts.join(" + ")+" = "+r.sum.toFixed(2);
+    document.getElementById("sumResult").textContent="Soma: "+r.sum.toFixed(2);
+
+    // Output
+    var out=r.out;
+    var isOn=out>=0.5;
+    var box=document.getElementById("outBox");
+    box.className=isOn?"out-box on":"out-box off";
+    document.getElementById("outIco").textContent=isOn?"🌂":"☀️";
+    var valEl=document.getElementById("outVal");
+    valEl.textContent=out.toFixed(2);
+    valEl.className=isOn?"out-val on":"out-val off";
+    document.getElementById("outLbl").textContent=isOn?"Sim, leva o guarda-chuva!":"Não, deixa o guarda-chuva em casa.";
+
+    var bar=document.getElementById("outBar");
+    bar.style.width=Math.round(out*100)+"%";
+    bar.style.background=isOn?"#69db7c":"#ff6b6b";
+
+    drawActivation(r.sum, out);
+  }
+
+  // Activation function chart
+  var acv=document.getElementById("acv");
+  var acx=acv.getContext("2d");
+
+  function resizeChart(){
+    var p=acv.parentElement;
+    var w=p.getBoundingClientRect().width;
+    var h=140;
+    var d=window.devicePixelRatio||1;
+    acv.width=Math.floor(w*d);
+    acv.height=Math.floor(h*d);
+    acv.style.width=w+"px";
+    acv.style.height=h+"px";
+    acx.setTransform(d,0,0,d,0,0);
+    return {w:w,h:h};
+  }
+
+  function drawActivation(sumVal, outVal){
+    var sz=resizeChart();
+    var w=sz.w, h=sz.h;
+    acx.clearRect(0,0,w,h);
+
+    var pad=30;
+    var pw=w-2*pad, ph=h-2*pad;
+    var xMin=-6, xMax=6;
+
+    function toX(v){return pad+(v-xMin)/(xMax-xMin)*pw}
+    function toY(v){return pad+ph-(v*ph)}
+
+    // Grid
+    acx.strokeStyle="rgba(46,51,70,.4)";
+    acx.lineWidth=1;
+    // Horizontal at 0.5
+    var y50=toY(0.5);
+    acx.setLineDash([4,4]);
+    acx.beginPath();acx.moveTo(pad,y50);acx.lineTo(pad+pw,y50);acx.stroke();
+    acx.setLineDash([]);
+
+    // Labels
+    acx.fillStyle="rgba(139,144,165,.5)";
+    acx.font="500 9px system-ui,sans-serif";
+    acx.textAlign="right";
+    acx.textBaseline="middle";
+    acx.fillText("1",pad-6,toY(1));
+    acx.fillText("0.5",pad-6,toY(0.5));
+    acx.fillText("0",pad-6,toY(0));
+
+    // X axis labels
+    acx.textAlign="center";
+    acx.textBaseline="top";
+    acx.fillText("-6",toX(-6),pad+ph+4);
+    acx.fillText("0",toX(0),pad+ph+4);
+    acx.fillText("6",toX(6),pad+ph+4);
+
+    // Sigmoid curve
+    acx.strokeStyle="rgba(167,139,250,.5)";
+    acx.lineWidth=2;
+    acx.beginPath();
+    for(var px=0;px<=pw;px++){
+      var xv=xMin+(px/pw)*(xMax-xMin);
+      var yv=sigmoid(xv);
+      var sx=pad+px, sy=toY(yv);
+      if(px===0)acx.moveTo(sx,sy);else acx.lineTo(sx,sy);
+    }
+    acx.stroke();
+
+    // Current point
+    var clamped=Math.max(xMin,Math.min(xMax,sumVal));
+    var cx2=toX(clamped), cy=toY(outVal);
+
+    // Crosshair lines
+    acx.strokeStyle="rgba(167,139,250,.25)";
+    acx.lineWidth=1;
+    acx.setLineDash([3,3]);
+    acx.beginPath();acx.moveTo(cx2,pad+ph);acx.lineTo(cx2,cy);acx.stroke();
+    acx.beginPath();acx.moveTo(pad,cy);acx.lineTo(cx2,cy);acx.stroke();
+    acx.setLineDash([]);
+
+    // Dot
+    acx.beginPath();
+    acx.arc(cx2,cy,7,0,Math.PI*2);
+    acx.fillStyle="rgba(167,139,250,.2)";
+    acx.fill();
+    acx.beginPath();
+    acx.arc(cx2,cy,5,0,Math.PI*2);
+    acx.fillStyle="#a78bfa";
+    acx.fill();
+    acx.strokeStyle="rgba(255,255,255,.3)";
+    acx.lineWidth=1.5;
+    acx.stroke();
+
+    // Value labels on point
+    acx.fillStyle="#e8eaf0";
+    acx.font="bold 9px system-ui,sans-serif";
+    acx.textAlign="center";
+    acx.textBaseline="bottom";
+    acx.fillText("entrada: "+sumVal.toFixed(2),cx2,cy-12);
+    acx.textBaseline="top";
+    acx.fillStyle="#a78bfa";
+    acx.fillText("saida: "+outVal.toFixed(2),cx2,cy+12);
+
+    // Axis label
+    acx.fillStyle="rgba(139,144,165,.4)";
+    acx.font="500 8px system-ui,sans-serif";
+    acx.textAlign="center";
+    acx.textBaseline="top";
+    acx.fillText("soma ponderada",pad+pw/2,pad+ph+15);
+  }
+
+  // Event listeners
+  for(var i=0;i<3;i++){
+    (function(idx){
+      document.getElementById("i"+idx).addEventListener("input",function(){
+        ins[idx]=parseInt(this.value)/100;
+        updateAll();
+      });
+      document.getElementById("w"+idx).addEventListener("input",function(){
+        ws[idx]=parseInt(this.value)/100;
+        updateAll();
+      });
+    })(i);
+  }
+
+  window.addEventListener("resize",function(){updateAll()});
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",updateAll);
+  } else {
+    setTimeout(updateAll,0);
+  }
+})();
+</script>
+</body>
+</html>

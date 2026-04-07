@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Deep Learning</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f1117;color:#e8eaf0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+.c{max-width:880px;margin:0 auto;padding:1.5rem 1rem 2.5rem}
+header{text-align:center;margin-bottom:1.8rem}
+.tg{display:inline-block;background:rgba(250,176,5,.12);color:#fab005;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.3rem .8rem;border-radius:20px;margin-bottom:.8rem;border:1px solid rgba(250,176,5,.2)}
+h1{font-family:Georgia,serif;font-weight:700;font-size:clamp(1.3rem,3.5vw,2rem);line-height:1.25;margin-bottom:.5rem}
+header p{color:#8b90a5;font-size:.88rem;max-width:500px;margin:0 auto;line-height:1.55}
+
+.versus{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:600px){.versus{grid-template-columns:1fr}}
+
+.panel{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;overflow:hidden}
+.panel-head{padding:.7rem .9rem;border-bottom:1px solid #2e3346;display:flex;align-items:center;gap:.5rem}
+.panel-head h2{font-family:Georgia,serif;font-size:.85rem;font-weight:600}
+.badge{font-size:.62rem;font-weight:700;padding:.2rem .5rem;border-radius:10px;text-transform:uppercase;letter-spacing:.05em}
+.badge.shallow{background:rgba(255,107,107,.12);color:#ff6b6b;border:1px solid rgba(255,107,107,.2)}
+.badge.deep{background:rgba(105,219,124,.12);color:#69db7c;border:1px solid rgba(105,219,124,.2)}
+.panel-body{position:relative;background:#13151d}
+.panel-body canvas{display:block;width:100%;cursor:default}
+.panel-foot{padding:.5rem .9rem;display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:#8b90a5;border-top:1px solid rgba(46,51,70,.5)}
+.panel-foot b{color:#e8eaf0;font-weight:700}
+.panel-foot .acc{font-weight:700}
+.acc.good{color:#69db7c}
+.acc.bad{color:#ff6b6b}
+.acc.mid{color:#fab005}
+
+/* Layers viz */
+.layers-viz{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem;margin-bottom:1rem}
+.layers-viz h3{font-family:Georgia,serif;font-size:.85rem;font-weight:600;margin-bottom:.6rem}
+.net-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;padding:.5rem .6rem;border-radius:7px}
+.net-row.sh{background:rgba(255,107,107,.04);border:1px solid rgba(255,107,107,.1)}
+.net-row.dp{background:rgba(105,219,124,.04);border:1px solid rgba(105,219,124,.1)}
+.net-lbl{font-size:.72rem;color:#8b90a5;min-width:60px;font-weight:600}
+.layer-dots{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.ldot{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:700;color:rgba(255,255,255,.6)}
+.ldot.in{background:rgba(124,138,255,.35);border:1px solid rgba(124,138,255,.5)}
+.ldot.h{background:rgba(167,139,250,.3);border:1px solid rgba(167,139,250,.4)}
+.ldot.out{background:rgba(250,176,5,.3);border:1px solid rgba(250,176,5,.4)}
+.arrow{color:#3d4260;font-size:.8rem}
+
+/* Controls */
+.controls{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem;margin-bottom:1rem}
+.controls h3{font-family:Georgia,serif;font-size:.85rem;font-weight:600;margin-bottom:.6rem}
+.ctrl-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem}
+.cbtn{padding:.4rem .7rem;border-radius:7px;border:1px solid #2e3346;background:#242836;color:#e8eaf0;font-size:.74rem;cursor:pointer;transition:all .12s;font-family:system-ui,sans-serif;font-weight:500}
+.cbtn:hover{background:#2e3346;transform:translateY(-1px)}
+.cbtn.on{border-color:#a78bfa;background:rgba(167,139,250,.12);color:#a78bfa}
+.sl{display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem}
+.sl label{font-size:.72rem;color:#8b90a5;min-width:70px}
+.sl input[type=range]{flex:1;accent-color:#a78bfa;height:4px}
+.sl .sv{font-size:.72rem;font-weight:700;color:#a78bfa;min-width:28px;text-align:right}
+.ac{display:flex;gap:.5rem;margin-top:.4rem}
+.bt{flex:1;padding:.55rem;border:1px solid #2e3346;border-radius:7px;background:#242836;color:#e8eaf0;font-family:system-ui,sans-serif;font-size:.76rem;font-weight:500;cursor:pointer;transition:all .15s}
+.bt:hover{background:#2e3346}
+.bt.p{background:#a78bfa;color:#fff;border-color:#a78bfa;font-weight:600}
+.bt.p:hover{filter:brightness(1.12)}
+.bt:disabled{opacity:.3;cursor:not-allowed}
+
+/* Progress */
+.prog{display:flex;align-items:center;gap:.4rem;margin-top:.3rem}
+.prog label{font-size:.68rem;color:#8b90a5;min-width:48px}
+.prog-bg{flex:1;height:5px;background:#242836;border-radius:3px;overflow:hidden}
+.prog-f{height:100%;background:linear-gradient(90deg,#a78bfa,#69db7c);border-radius:3px;transition:width .2s}
+.prog .pv{font-size:.68rem;font-weight:700;color:#a78bfa;min-width:28px;text-align:right}
+
+/* Explanation */
+.ex{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem;margin-top:1rem}
+.ex h3{font-family:Georgia,serif;font-size:.9rem;font-weight:600;margin-bottom:.6rem}
+.ex p{font-size:.8rem;color:#8b90a5;line-height:1.65;margin-bottom:.5rem}
+.ex p:last-child{margin-bottom:0}
+.hl{color:#fab005;font-weight:600}
+.cmp{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:8px;padding:.8rem;margin-top:.6rem}
+.cmp h4{font-size:.8rem;font-weight:600;color:#a78bfa;margin-bottom:.4rem;font-family:Georgia,serif}
+.cmp p{font-size:.78rem;margin-bottom:.25rem}
+.cmp p:last-child{margin-bottom:0}
+.tt{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(70px);background:#242836;border:1px solid #2e3346;color:#e8eaf0;padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:500;opacity:0;transition:all .35s ease;pointer-events:none;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.tt.vi{opacity:1;transform:translateX(-50%) translateY(0)}
+.pi{display:flex;align-items:center;gap:.4rem;padding:.45rem .7rem;border-radius:6px;font-size:.72rem;font-weight:600;margin-bottom:.5rem}
+.pi.r{background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.pi.d{background:rgba(105,219,124,.1);color:#69db7c;border:1px solid rgba(105,219,124,.2)}
+.pd{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pu 1.5s ease-in-out infinite}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+</style>
+</head>
+<body>
+<div class="c">
+  <header>
+    <div class="tg">Módulo 1 · Experiência Interativa</div>
+    <h1>Porquê "Deep"? A Profundidade Importa</h1>
+    <p>Compara uma rede com 1 camada vs. várias camadas a resolver o mesmo problema — e vê porque é que a profundidade faz toda a diferença.</p>
+  </header>
+
+  <!-- Layer comparison -->
+  <div class="layers-viz">
+    <h3>Arquitetura das duas redes</h3>
+    <div class="net-row sh">
+      <span class="net-lbl" style="color:#ff6b6b">Rasa:</span>
+      <div class="layer-dots">
+        <span class="ldot in"></span><span class="ldot in"></span>
+        <span class="arrow">→</span>
+        <span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span>
+        <span class="arrow">→</span>
+        <span class="ldot out"></span>
+      </div>
+      <span style="font-size:.68rem;color:#8b90a5;margin-left:auto">1 camada oculta</span>
+    </div>
+    <div class="net-row dp">
+      <span class="net-lbl" style="color:#69db7c">Profunda:</span>
+      <div class="layer-dots">
+        <span class="ldot in"></span><span class="ldot in"></span>
+        <span class="arrow">→</span>
+        <span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span>
+        <span class="arrow">→</span>
+        <span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span>
+        <span class="arrow">→</span>
+        <span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span><span class="ldot h"></span>
+        <span class="arrow">→</span>
+        <span class="ldot out"></span>
+      </div>
+      <span style="font-size:.68rem;color:#8b90a5;margin-left:auto">3 camadas ocultas</span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="pi r" id="ph"><div class="pd"></div><span id="pt">Pronto para treinar</span></div>
+    <h3>Padrão dos dados</h3>
+    <div class="ctrl-row" id="patBtns">
+      <button class="cbtn on" data-p="circle">Círculo</button>
+      <button class="cbtn" data-p="spiral">Espiral</button>
+      <button class="cbtn" data-p="xor">XOR</button>
+      <button class="cbtn" data-p="clusters">Clusters</button>
+    </div>
+    <div class="sl">
+      <label>Epochs:</label>
+      <input type="range" min="50" max="500" value="200" step="50" id="epR">
+      <span class="sv" id="epV">200</span>
+    </div>
+    <div class="prog">
+      <label>Progresso:</label>
+      <div class="prog-bg"><div class="prog-f" id="pf" style="width:0"></div></div>
+      <span class="pv" id="prV">0%</span>
+    </div>
+    <div class="ac">
+      <button class="bt" id="rB">Novos dados</button>
+      <button class="bt p" id="tB">Treinar ambas</button>
+    </div>
+  </div>
+
+  <!-- Versus panels -->
+  <div class="versus">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="badge shallow">Rasa</span>
+        <h2>1 Camada Oculta</h2>
+      </div>
+      <div class="panel-body" id="pw1"><canvas id="c1"></canvas></div>
+      <div class="panel-foot">
+        <span>Precisão: <span class="acc bad" id="a1">—</span></span>
+        <span>Epoch: <b id="e1">0</b></span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="badge deep">Profunda</span>
+        <h2>3 Camadas Ocultas</h2>
+      </div>
+      <div class="panel-body" id="pw2"><canvas id="c2"></canvas></div>
+      <div class="panel-foot">
+        <span>Precisão: <span class="acc good" id="a2">—</span></span>
+        <span>Epoch: <b id="e2">0</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ex">
+    <h3>O que estás a ver?</h3>
+    <p>Ambas as redes tentam resolver <span class="hl">o mesmo problema</span>: separar os pontos azuis dos vermelhos. A diferença é a profundidade.</p>
+    <p>A rede <span class="hl">rasa</span> (1 camada) só consegue aprender fronteiras simples — quase retas. Para padrões como círculos ou espirais, falha.</p>
+    <p>A rede <span class="hl">profunda</span> (3 camadas) aprende fronteiras complexas e curvas. Cada camada aprende um nível de abstração diferente — a primeira deteta padrões simples, as seguintes combinam-nos em padrões mais complexos.</p>
+    <p>É por isto que se chama <span class="hl">Deep Learning</span> — a profundidade (muitas camadas) permite aprender representações cada vez mais sofisticadas. É o que está por trás do reconhecimento facial, tradução automática e geração de texto e imagens.</p>
+    <div class="cmp">
+      <h4>A jornada completa do Módulo</h4>
+      <p><b>ML Supervisionado</b> → aprende com exemplos rotulados</p>
+      <p><b>ML Não Supervisionado</b> → descobre padrões sem rótulos</p>
+      <p><b>ML por Reforço</b> → aprende por tentativa e erro</p>
+      <p><b>Neurónio</b> → o bloco fundamental</p>
+      <p><b>Deep Learning</b> → redes profundas de neurónios</p>
+      <p><b>Próximo:</b> IA Generativa — o que acontece quando redes profundas aprendem a <i>criar</i></p>
+    </div>
+  </div>
+</div>
+<div class="tt" id="to"></div>
+<script>
+(function(){
+  var pattern="circle";
+  var data=[];
+  var running=false, tid=null;
+
+  // --- Tiny neural network library ---
+  function rand(){return(Math.random()-0.5)*2}
+  function sigmoid(x){return 1/(1+Math.exp(-Math.max(-10,Math.min(10,x))))}
+  function dsigmoid(x){return x*(1-x)}
+  function tanh2(x){var e=Math.exp(2*Math.max(-10,Math.min(10,x)));return(e-1)/(e+1)}
+  function dtanh(x){return 1-x*x}
+
+  function makeNet(layers){
+    var net={w:[],b:[],a:[]};
+    for(var i=1;i<layers.length;i++){
+      var ww=[],bb=[];
+      for(var j=0;j<layers[i];j++){
+        var row=[];
+        for(var k=0;k<layers[i-1];k++) row.push(rand()*0.6);
+        ww.push(row);
+        bb.push(rand()*0.3);
+      }
+      net.w.push(ww);
+      net.b.push(bb);
+    }
+    return net;
+  }
+
+  function forward(net,inp){
+    net.a=[inp.slice()];
+    var cur=inp;
+    for(var l=0;l<net.w.length;l++){
+      var next=[];
+      var isLast=l===net.w.length-1;
+      for(var j=0;j<net.w[l].length;j++){
+        var sum=net.b[l][j];
+        for(var k=0;k<cur.length;k++) sum+=cur[k]*net.w[l][j][k];
+        next.push(isLast?sigmoid(sum):tanh2(sum));
+      }
+      net.a.push(next);
+      cur=next;
+    }
+    return cur;
+  }
+
+  function train1(net,inp,target,lr){
+    var out=forward(net,inp);
+    var L=net.w.length;
+    var deltas=[];
+    // Output layer delta
+    var d=[];
+    for(var j=0;j<out.length;j++){
+      var err=out[j]-target[j];
+      d.push(err*dsigmoid(out[j]));
+    }
+    deltas[L-1]=d;
+    // Hidden deltas
+    for(var l=L-2;l>=0;l--){
+      var dd=[];
+      for(var j=0;j<net.w[l].length;j++){
+        var sum=0;
+        for(var k=0;k<net.w[l+1].length;k++) sum+=deltas[l+1][k]*net.w[l+1][k][j];
+        dd.push(sum*dtanh(net.a[l+1][j]));
+      }
+      deltas[l]=dd;
+    }
+    // Update
+    for(var l=0;l<L;l++){
+      for(var j=0;j<net.w[l].length;j++){
+        for(var k=0;k<net.w[l][j].length;k++){
+          net.w[l][j][k]-=lr*deltas[l][j]*net.a[l][k];
+        }
+        net.b[l][j]-=lr*deltas[l][j];
+      }
+    }
+  }
+
+  // --- Data generation ---
+  function genData(){
+    data=[];
+    var n=120;
+    if(pattern==="circle"){
+      for(var i=0;i<n;i++){
+        var a=Math.random()*Math.PI*2;
+        var r2=0.15+Math.random()*0.15;
+        data.push({x:0.5+Math.cos(a)*r2,y:0.5+Math.sin(a)*r2,c:1});
+      }
+      for(var i=0;i<n;i++){
+        var a=Math.random()*Math.PI*2;
+        var r2=0.35+Math.random()*0.12;
+        data.push({x:0.5+Math.cos(a)*r2,y:0.5+Math.sin(a)*r2,c:0});
+      }
+    } else if(pattern==="spiral"){
+      for(var i=0;i<n;i++){
+        var t=i/n*3+Math.random()*0.3;
+        var r2=t*0.12;
+        data.push({x:0.5+Math.cos(t*2.5)*r2,y:0.5+Math.sin(t*2.5)*r2,c:1});
+        data.push({x:0.5-Math.cos(t*2.5)*r2,y:0.5-Math.sin(t*2.5)*r2,c:0});
+      }
+    } else if(pattern==="xor"){
+      for(var i=0;i<n;i++){
+        var x=Math.random(),y=Math.random();
+        var c=((x>0.5)!==(y>0.5))?1:0;
+        data.push({x:x,y:y,c:c});
+      }
+    } else {
+      for(var i=0;i<n/2;i++){
+        data.push({x:0.25+Math.random()*0.2,y:0.25+Math.random()*0.2,c:1});
+        data.push({x:0.6+Math.random()*0.2,y:0.6+Math.random()*0.2,c:1});
+        data.push({x:0.25+Math.random()*0.2,y:0.6+Math.random()*0.2,c:0});
+        data.push({x:0.6+Math.random()*0.2,y:0.25+Math.random()*0.2,c:0});
+      }
+    }
+  }
+
+  // --- Canvas rendering ---
+  var c1=document.getElementById("c1"),x1=c1.getContext("2d");
+  var c2=document.getElementById("c2"),x2=c2.getContext("2d");
+
+  function resizeCv(cv,wrap){
+    var r=wrap.getBoundingClientRect();
+    var w=Math.floor(r.width),h=Math.floor(w);
+    var d=window.devicePixelRatio||1;
+    cv.width=Math.floor(w*d);cv.height=Math.floor(h*d);
+    cv.style.width=w+"px";cv.style.height=h+"px";
+    cv.getContext("2d").setTransform(d,0,0,d,0,0);
+    return{w:w,h:h};
+  }
+
+  function drawNet(cv,ctx,net,label){
+    var wr=cv.parentElement;
+    var sz=resizeCv(cv,wr);
+    var w=sz.w,h=sz.h;
+    ctx.clearRect(0,0,w,h);
+
+    // Decision regions
+    if(net){
+      var res=4;
+      try{
+        var iw=Math.ceil(w/res),ih=Math.ceil(h/res);
+        var im=ctx.createImageData(iw,ih),dd=im.data;
+        for(var py=0;py<ih;py++){
+          for(var px=0;px<iw;px++){
+            var nx=px/iw,ny=1-py/ih;
+            var out=forward(net,[nx,ny]);
+            var v=out[0];
+            var idx=(py*iw+px)*4;
+            // Blue vs red region
+            dd[idx]=Math.floor(255*(1-v)*0.6);
+            dd[idx+1]=Math.floor(100*v*0.4);
+            dd[idx+2]=Math.floor(255*v*0.6);
+            dd[idx+3]=30;
+          }
+        }
+        // Scale up
+        var tmpCv=document.createElement("canvas");
+        tmpCv.width=iw;tmpCv.height=ih;
+        tmpCv.getContext("2d").putImageData(im,0,0);
+        ctx.imageSmoothingEnabled=true;
+        ctx.drawImage(tmpCv,0,0,w,h);
+      }catch(e){}
+    }
+
+    // Data points
+    for(var i=0;i<data.length;i++){
+      var p=data[i];
+      var sx=p.x*w,sy=(1-p.y)*h;
+      ctx.beginPath();
+      ctx.arc(sx,sy,4,0,Math.PI*2);
+      ctx.fillStyle=p.c===1?"rgba(100,149,255,.8)":"rgba(255,100,100,.8)";
+      ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,.15)";
+      ctx.lineWidth=1;
+      ctx.stroke();
+    }
+  }
+
+  function accuracy(net){
+    if(!net||data.length===0)return 0;
+    var correct=0;
+    for(var i=0;i<data.length;i++){
+      var out=forward(net,[data[i].x,data[i].y]);
+      var pred=out[0]>0.5?1:0;
+      if(pred===data[i].c)correct++;
+    }
+    return Math.round(correct/data.length*100);
+  }
+
+  function accClass(v){return v>=85?"acc good":v>=65?"acc mid":"acc bad"}
+
+  // --- Training ---
+  var netS=null, netD=null;
+
+  function runTraining(){
+    if(running)return;
+    running=true;
+    document.getElementById("tB").disabled=true;
+    document.getElementById("rB").disabled=true;
+
+    netS=makeNet([2,4,1]);
+    netD=makeNet([2,4,4,4,1]);
+
+    var maxEp=parseInt(document.getElementById("epR").value)||200;
+    var ep=0;
+    var lr=0.5;
+
+    document.getElementById("ph").className="pi r";
+    document.getElementById("pt").textContent="A treinar...";
+
+    function step(){
+      if(!running){finish();return}
+      if(ep>=maxEp){finish();return}
+
+      // Train batch
+      var batchSize=Math.min(10,maxEp-ep);
+      for(var b=0;b<batchSize;b++){
+        for(var i=0;i<data.length;i++){
+          train1(netS,[data[i].x,data[i].y],[data[i].c],lr);
+          train1(netD,[data[i].x,data[i].y],[data[i].c],lr);
+        }
+        ep++;
+      }
+      lr=Math.max(0.05,lr*0.998);
+
+      // Update display
+      var pct=Math.round(ep/maxEp*100);
+      document.getElementById("pf").style.width=pct+"%";
+      document.getElementById("prV").textContent=pct+"%";
+      document.getElementById("e1").textContent=ep;
+      document.getElementById("e2").textContent=ep;
+
+      var ac1=accuracy(netS),ac2=accuracy(netD);
+      var a1El=document.getElementById("a1");
+      a1El.textContent=ac1+"%";a1El.className=accClass(ac1);
+      var a2El=document.getElementById("a2");
+      a2El.textContent=ac2+"%";a2El.className=accClass(ac2);
+
+      drawNet(c1,x1,netS);
+      drawNet(c2,x2,netD);
+
+      if(ep<maxEp) tid=setTimeout(step,30);
+      else finish();
+    }
+
+    function finish(){
+      running=false;
+      document.getElementById("tB").disabled=false;
+      document.getElementById("rB").disabled=false;
+      document.getElementById("ph").className="pi d";
+      document.getElementById("pt").textContent="Treino completo!";
+      drawNet(c1,x1,netS);
+      drawNet(c2,x2,netD);
+      var ac1=accuracy(netS),ac2=accuracy(netD);
+      toast("Rasa: "+ac1+"% vs Profunda: "+ac2+"%");
+    }
+
+    tid=setTimeout(step,50);
+  }
+
+  function resetData(){
+    if(tid){clearTimeout(tid);tid=null}
+    running=false;netS=null;netD=null;
+    genData();
+    document.getElementById("tB").disabled=false;
+    document.getElementById("rB").disabled=false;
+    document.getElementById("ph").className="pi r";
+    document.getElementById("pt").textContent="Pronto para treinar";
+    document.getElementById("pf").style.width="0";
+    document.getElementById("prV").textContent="0%";
+    document.getElementById("e1").textContent="0";
+    document.getElementById("e2").textContent="0";
+    document.getElementById("a1").textContent="—";
+    document.getElementById("a1").className="acc bad";
+    document.getElementById("a2").textContent="—";
+    document.getElementById("a2").className="acc good";
+    drawNet(c1,x1,null);
+    drawNet(c2,x2,null);
+  }
+
+  function toast(m){
+    var t=document.getElementById("to");t.textContent=m;t.className="tt vi";
+    setTimeout(function(){t.className="tt"},2800);
+  }
+
+  // Events
+  document.getElementById("tB").addEventListener("click",runTraining);
+  document.getElementById("rB").addEventListener("click",resetData);
+  document.getElementById("epR").addEventListener("input",function(){
+    document.getElementById("epV").textContent=this.value;
+  });
+
+  var patBtns=document.getElementById("patBtns");
+  patBtns.addEventListener("click",function(e){
+    var t=e.target;
+    if(!t.getAttribute("data-p"))return;
+    pattern=t.getAttribute("data-p");
+    var bs=patBtns.children;
+    for(var i=0;i<bs.length;i++)bs[i].className="cbtn";
+    t.className="cbtn on";
+    resetData();
+  });
+
+  window.addEventListener("resize",function(){
+    drawNet(c1,x1,netS);drawNet(c2,x2,netD);
+  });
+
+  // Init
+  genData();
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){
+      drawNet(c1,x1,null);drawNet(c2,x2,null);
+    });
+  } else {
+    setTimeout(function(){drawNet(c1,x1,null);drawNet(c2,x2,null)},0);
+  }
+})();
+</script>
+</body>
+</html>

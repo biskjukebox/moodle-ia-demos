@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Aprendizagem por Reforço</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f1117;color:#e8eaf0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+.c{max-width:960px;margin:0 auto;padding:1.5rem 1rem 2.5rem}
+header{text-align:center;margin-bottom:2rem}
+.tg{display:inline-block;background:rgba(250,176,5,.12);color:#fab005;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.3rem .8rem;border-radius:20px;margin-bottom:.8rem;border:1px solid rgba(250,176,5,.2)}
+h1{font-family:Georgia,serif;font-weight:700;font-size:clamp(1.4rem,3.5vw,2.2rem);line-height:1.25;margin-bottom:.5rem}
+header p{color:#8b90a5;font-size:.9rem;max-width:500px;margin:0 auto;line-height:1.55}
+.ly{display:grid;grid-template-columns:1fr 280px;gap:1.2rem;align-items:start}
+@media(max-width:760px){.ly{grid-template-columns:1fr}}
+.cc{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;overflow:hidden}
+.ch{padding:.8rem 1rem;border-bottom:1px solid #2e3346;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem}
+.ch h2{font-family:Georgia,serif;font-size:.95rem;font-weight:600}
+.sts{display:flex;gap:.7rem;font-size:.75rem;color:#8b90a5;flex-wrap:wrap}
+.sts b{font-weight:700;color:#e8eaf0}
+.sts .ye{color:#fab005}
+.sts .gr{color:#69db7c}
+.gw{padding:1rem;background:#13151d;display:flex;justify-content:center}
+.grid{display:inline-grid;gap:3px}
+.cl{width:48px;height:48px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid rgba(46,51,70,.5);transition:background .12s}
+@media(max-width:500px){.cl{width:38px;height:38px;font-size:1.1rem}}
+.cl.e{background:#1a1d27}
+.cl.w{background:#2e3346;border-color:#3d4260}
+.cl.p{background:rgba(255,107,107,.08);border-color:rgba(255,107,107,.2)}
+.cl.g{background:rgba(250,176,5,.1);border-color:rgba(250,176,5,.25)}
+.cl.a{background:rgba(124,138,255,.15);border-color:rgba(124,138,255,.3)}
+.cl.v{background:rgba(77,205,196,.05)}
+.bw{padding:.5rem 1rem .8rem}
+.pb{width:100%;height:5px;background:#242836;border-radius:3px;overflow:hidden}
+.pf{height:100%;width:0;background:linear-gradient(90deg,#fab005,#69db7c);border-radius:3px;transition:width .3s}
+.bl{display:flex;justify-content:space-between;font-size:.6rem;color:#6b7089;margin-top:.2rem}
+.sb{display:flex;flex-direction:column;gap:.8rem}
+.cd{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem}
+.cd h3{font-family:Georgia,serif;font-size:.85rem;font-weight:600;margin-bottom:.6rem}
+.pi{display:flex;align-items:center;gap:.4rem;padding:.5rem .7rem;border-radius:6px;font-size:.75rem;font-weight:600;margin-bottom:.6rem}
+.pi.x{background:rgba(250,176,5,.1);color:#fab005;border:1px solid rgba(250,176,5,.2)}
+.pi.l{background:rgba(124,138,255,.1);color:#7c8aff;border:1px solid rgba(124,138,255,.2)}
+.pi.d{background:rgba(105,219,124,.1);color:#69db7c;border:1px solid rgba(105,219,124,.2)}
+.pd{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pu 1.5s ease-in-out infinite}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.sl{display:flex;align-items:center;gap:.4rem;margin-bottom:.45rem}
+.sl label{font-size:.72rem;color:#8b90a5;min-width:65px}
+.sl input[type=range]{flex:1;accent-color:#fab005;height:4px}
+.sl .sv{font-size:.72rem;font-weight:700;color:#fab005;min-width:24px;text-align:right}
+.lg{display:flex;flex-wrap:wrap;gap:.4rem .7rem;margin-bottom:.3rem}
+.li{display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:#8b90a5}
+.lx{font-size:1rem}
+.is{font-size:.78rem;color:#8b90a5;line-height:1.6}
+.is b{color:#e8eaf0}
+.sp{display:flex;gap:.5rem;margin-bottom:.35rem;align-items:flex-start}
+.sn{flex-shrink:0;width:19px;height:19px;border-radius:50%;background:rgba(250,176,5,.1);color:#fab005;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(250,176,5,.2)}
+.ac{display:flex;gap:.5rem}
+.bt{flex:1;padding:.55rem;border:1px solid #2e3346;border-radius:7px;background:#242836;color:#e8eaf0;font-family:system-ui,sans-serif;font-size:.76rem;font-weight:500;cursor:pointer;transition:all .15s}
+.bt:hover{background:#2e3346}
+.bt.p{background:#fab005;color:#0f1117;border-color:#fab005;font-weight:600}
+.bt.p:hover{filter:brightness(1.1)}
+.bt:disabled{opacity:.3;cursor:not-allowed}
+.ex{background:#1a1d27;border:1px solid #2e3346;border-radius:10px;padding:1rem;margin-top:1.2rem}
+.ex h3{font-family:Georgia,serif;font-size:.9rem;font-weight:600;margin-bottom:.6rem}
+.ex p{font-size:.8rem;color:#8b90a5;line-height:1.65;margin-bottom:.5rem}
+.ex p:last-child{margin-bottom:0}
+.hl{color:#fab005;font-weight:600}
+.cmp{background:rgba(124,138,255,.06);border:1px solid rgba(124,138,255,.15);border-radius:8px;padding:.8rem;margin-top:.6rem}
+.cmp h4{font-size:.8rem;font-weight:600;color:#7c8aff;margin-bottom:.4rem;font-family:Georgia,serif}
+.cmp p{font-size:.78rem;margin-bottom:.25rem}
+.cmp p:last-child{margin-bottom:0}
+.tt{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(70px);background:#242836;border:1px solid #2e3346;color:#e8eaf0;padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:500;opacity:0;transition:all .35s ease;pointer-events:none;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.tt.vi{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="c">
+  <header>
+    <div class="tg">Módulo 1 · Experiência Interativa</div>
+    <h1>O Robô que Aprende Sozinho</h1>
+    <p>Observa como um agente aprende por tentativa e erro — recompensas quando acerta, penalizações quando erra, até descobrir o caminho ideal.</p>
+  </header>
+  <div class="ly">
+    <div class="cc">
+      <div class="ch">
+        <h2>Ambiente</h2>
+        <div class="sts">
+          <span>Episódio: <b class="ye" id="epN">0</b>/<b id="epT">80</b></span>
+          <span>Passos: <b id="stN">0</b></span>
+          <span>Melhor: <b class="gr" id="bsN">—</b></span>
+        </div>
+      </div>
+      <div class="gw"><div class="grid" id="gr"></div></div>
+      <div class="bw">
+        <div class="pb"><div class="pf" id="pf"></div></div>
+        <div class="bl"><span>Explorar (aleatório)</span><span>Explorar (aprendido)</span></div>
+      </div>
+    </div>
+    <div class="sb">
+      <div class="cd">
+        <div class="pi x" id="ph"><div class="pd"></div><span id="pt">Pronto</span></div>
+        <h3>Parâmetros</h3>
+        <div class="sl"><label>Velocidade:</label><input type="range" min="1" max="10" value="7" id="spd"><span class="sv" id="spV">7</span></div>
+        <div class="sl"><label>Episódios:</label><input type="range" min="20" max="200" value="80" step="10" id="eps"><span class="sv" id="epV">80</span></div>
+      </div>
+      <div class="cd">
+        <h3>Legenda</h3>
+        <div class="lg">
+          <div class="li"><span class="lx">🤖</span> Agente</div>
+          <div class="li"><span class="lx">💰</span> Tesouro +10</div>
+          <div class="li"><span class="lx">🕳</span> Buraco -5</div>
+          <div class="li"><span class="lx">⬛</span> Parede</div>
+        </div>
+      </div>
+      <div class="cd">
+        <h3>Como funciona</h3>
+        <div class="is">
+          <div class="sp"><span class="sn">1</span><span>O robô <b>explora</b> aleatoriamente</span></div>
+          <div class="sp"><span class="sn">2</span><span>Recebe <b>+recompensas</b> e <b>-penalizações</b></span></div>
+          <div class="sp"><span class="sn">3</span><span>Gradualmente descobre o <b>melhor caminho</b></span></div>
+        </div>
+      </div>
+      <div class="ac">
+        <button class="bt" id="rB">Limpar</button>
+        <button class="bt p" id="tB">Treinar</button>
+      </div>
+      <button class="bt" id="dB" disabled style="width:100%">Mostrar Caminho Aprendido</button>
+    </div>
+  </div>
+  <div class="ex">
+    <h3>O que está a acontecer aqui?</h3>
+    <p>O robô não tem dados rotulados nem instruções prévias. <span class="hl">Aprende por experiência</span>: tenta ações, observa os resultados e ajusta o comportamento. Encontrou o tesouro? Reforça esse caminho. Caiu no buraco? Aprende a evitá-lo.</p>
+    <p>O algoritmo usa-se chama <span class="hl">Q-Learning</span>. O agente constrói uma tabela interna que guarda, para cada posição, qual a melhor direção. No início anda às cegas (<span class="hl">exploração</span>), mas gradualmente passa a seguir o que já aprendeu (<span class="hl">exploração do conhecimento</span>).</p>
+    <p>Repara na barra de progresso: mostra essa transição de "explorar" para "confiar no que aprendeu".</p>
+    <div class="cmp">
+      <h4>Os 3 tipos de ML</h4>
+      <p><b>Supervisionada:</b> "Tens exemplos com rótulos — aprende."</p>
+      <p><b>Não Supervisionada:</b> "Tens dados sem rótulo — descobre padrões."</p>
+      <p><b>Por Reforço:</b> "Sem dados — aprende por tentativa e erro."</p>
+    </div>
+  </div>
+</div>
+<div class="tt" id="to"></div>
+<script>
+(function(){
+  var R=6, C=7;
+  var M=[
+    [0,0,0,1,0,0,0],
+    [0,1,0,1,0,2,0],
+    [0,1,0,0,0,0,0],
+    [0,0,2,1,1,0,0],
+    [0,1,0,0,0,2,0],
+    [0,0,0,1,0,0,3]
+  ];
+  var SR=0,SC=0;
+  var DR=[[-1,0],[1,0],[0,-1],[0,1]];
+  var Q={}, eps=1, gam=0.9, alp=0.2;
+  var on=false, tid=null, ep=0, totEp=80, bestSteps=999;
+
+  function k(r,c){return r*100+c}
+  function gQ(r,c,a){var o=Q[k(r,c)];return o?o[a]:0}
+  function sQ(r,c,a,v){var key=k(r,c);if(!Q[key])Q[key]=[0,0,0,0];Q[key][a]=v}
+  function bA(r,c){var o=Q[k(r,c)];if(!o)return Math.floor(Math.random()*4);var b=0;for(var i=1;i<4;i++)if(o[i]>o[b])b=i;return b}
+  function ok(r,c){return r>=0&&r<R&&c>=0&&c<C&&M[r][c]!==1}
+
+  // Build grid once
+  var gr=document.getElementById("gr");
+  gr.style.gridTemplateColumns="repeat("+C+",48px)";
+  gr.style.gridTemplateRows="repeat("+R+",48px)";
+  if(window.innerWidth<500){
+    gr.style.gridTemplateColumns="repeat("+C+",38px)";
+    gr.style.gridTemplateRows="repeat("+R+",38px)";
+  }
+  var cells=[];
+  for(var i=0;i<R*C;i++){
+    var d=document.createElement("div");
+    d.className="cl e";
+    gr.appendChild(d);
+    cells.push(d);
+  }
+
+  function render(ar,ac,vis){
+    for(var r=0;r<R;r++){
+      for(var c=0;c<C;c++){
+        var idx=r*C+c;
+        var d=cells[idx];
+        var m=M[r][c];
+        var txt="";
+        var cls="cl ";
+
+        if(r===ar&&c===ac){
+          cls+="a"; txt="🤖";
+        } else if(m===1){
+          cls+="w"; txt="";
+        } else if(m===2){
+          cls+="p"; txt="🕳";
+        } else if(m===3){
+          cls+="g"; txt="💰";
+        } else if(vis&&vis[k(r,c)]){
+          cls+="v"; txt="";
+        } else {
+          cls+="e"; txt="";
+        }
+
+        d.className=cls;
+        d.textContent=txt;
+      }
+    }
+  }
+
+  function toast(m){
+    var t=document.getElementById("to");
+    t.textContent=m;
+    t.className="tt vi";
+    setTimeout(function(){t.className="tt"},2400);
+  }
+
+  function updBar(){
+    var pct=Math.max(0,Math.min(100,(1-eps)*100));
+    document.getElementById("pf").style.width=pct+"%";
+  }
+
+  function updStats(steps){
+    document.getElementById("epN").textContent=ep;
+    document.getElementById("stN").textContent=steps;
+    document.getElementById("bsN").textContent=bestSteps>900?"—":bestSteps;
+  }
+
+  function train(){
+    if(on)return;
+    on=true;
+    Q={};eps=1;ep=0;bestSteps=999;
+    totEp=parseInt(document.getElementById("eps").value)||80;
+    document.getElementById("epT").textContent=totEp;
+    document.getElementById("tB").disabled=true;
+    document.getElementById("dB").disabled=true;
+    document.getElementById("rB").disabled=true;
+
+    function doEp(){
+      if(!on)return;
+      if(ep>=totEp){
+        on=false;
+        document.getElementById("ph").className="pi d";
+        document.getElementById("pt").textContent="Treino completo!";
+        document.getElementById("tB").disabled=false;
+        document.getElementById("dB").disabled=false;
+        document.getElementById("rB").disabled=false;
+        render(-1,-1,null);
+        toast("Treino completo! Clica em \"Mostrar Caminho Aprendido\"");
+        return;
+      }
+
+      ep++;
+      eps=Math.max(0.05, 1-(ep/totEp)*1.2);
+      updBar();
+
+      if(eps>0.5){
+        document.getElementById("ph").className="pi x";
+        document.getElementById("pt").textContent="Ep. "+ep+" — explorar";
+      } else {
+        document.getElementById("ph").className="pi l";
+        document.getElementById("pt").textContent="Ep. "+ep+" — a usar conhecimento";
+      }
+
+      var ar=SR, ac=SC, st=0, maxS=60;
+      var vis={};
+      vis[k(ar,ac)]=1;
+
+      function step(){
+        if(!on)return;
+
+        if(st>=maxS||M[ar][ac]===3||M[ar][ac]===2){
+          if(M[ar][ac]===3&&st<bestSteps)bestSteps=st;
+          updStats(st);
+          render(-1,-1,null);
+          var sp=parseInt(document.getElementById("spd").value)||7;
+          tid=setTimeout(doEp, Math.max(10,200-sp*19));
+          return;
+        }
+
+        var act;
+        if(Math.random()<eps){
+          act=Math.floor(Math.random()*4);
+        } else {
+          act=bA(ar,ac);
+        }
+
+        var nr=ar+DR[act][0], nc=ac+DR[act][1];
+        var rew=-0.1;
+
+        if(!ok(nr,nc)){
+          nr=ar; nc=ac; rew=-0.3;
+        } else if(M[nr][nc]===2){
+          rew=-5;
+        } else if(M[nr][nc]===3){
+          rew=10;
+        }
+
+        var old=gQ(ar,ac,act);
+        var mx=gQ(nr,nc,0);
+        for(var i=1;i<4;i++){var qq=gQ(nr,nc,i);if(qq>mx)mx=qq}
+        sQ(ar,ac,act, old+alp*(rew+gam*mx-old));
+
+        ar=nr; ac=nc; st++;
+        vis[k(ar,ac)]=1;
+
+        updStats(st);
+        render(ar,ac,vis);
+
+        if(M[ar][ac]===2||M[ar][ac]===3){
+          if(M[ar][ac]===3&&st<bestSteps)bestSteps=st;
+          var sp=parseInt(document.getElementById("spd").value)||7;
+          tid=setTimeout(function(){
+            render(-1,-1,null);
+            tid=setTimeout(doEp, Math.max(10,120-sp*11));
+          }, Math.max(30,250-sp*23));
+          return;
+        }
+
+        var sp=parseInt(document.getElementById("spd").value)||7;
+        tid=setTimeout(step, Math.max(8,140-sp*13));
+      }
+
+      render(ar,ac,vis);
+      var sp=parseInt(document.getElementById("spd").value)||7;
+      tid=setTimeout(step, Math.max(8,140-sp*13));
+    }
+
+    doEp();
+  }
+
+  function showPath(){
+    if(on)return;
+    var ar=SR,ac=SC,st=0,mx=50;
+    var path=[{r:ar,c:ac}];
+
+    while(st<mx&&M[ar][ac]!==3){
+      var act=bA(ar,ac);
+      var nr=ar+DR[act][0],nc=ac+DR[act][1];
+      if(!ok(nr,nc))break;
+      ar=nr;ac=nc;st++;
+      path.push({r:ar,c:ac});
+      if(M[ar][ac]===2)break;
+    }
+
+    var i=0;
+    document.getElementById("ph").className="pi d";
+    document.getElementById("pt").textContent="Caminho aprendido ("+path.length+" passos)";
+
+    function go(){
+      if(i>=path.length)return;
+      var vis={};
+      for(var j=0;j<=i;j++)vis[k(path[j].r,path[j].c)]=1;
+      render(path[i].r,path[i].c,vis);
+      i++;
+      tid=setTimeout(go,200);
+    }
+    go();
+  }
+
+  function reset(){
+    if(tid){clearTimeout(tid);tid=null}
+    on=false;Q={};eps=1;ep=0;bestSteps=999;
+    document.getElementById("ph").className="pi x";
+    document.getElementById("pt").textContent="Pronto";
+    document.getElementById("tB").disabled=false;
+    document.getElementById("dB").disabled=true;
+    document.getElementById("rB").disabled=false;
+    document.getElementById("pf").style.width="0%";
+    updStats(0);
+    render(-1,-1,null);
+    toast("Tudo limpo!");
+  }
+
+  document.getElementById("spd").addEventListener("input",function(){
+    document.getElementById("spV").textContent=this.value;
+  });
+  document.getElementById("eps").addEventListener("input",function(){
+    document.getElementById("epV").textContent=this.value;
+  });
+  document.getElementById("tB").addEventListener("click",train);
+  document.getElementById("dB").addEventListener("click",showPath);
+  document.getElementById("rB").addEventListener("click",reset);
+
+  render(-1,-1,null);
+})();
+</script>
+</body>
+</html>
